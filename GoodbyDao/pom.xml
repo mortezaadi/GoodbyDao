@@ -41,6 +41,7 @@
 			<groupId>javax.persistence</groupId>
 			<artifactId>persistence-api</artifactId>
 			<version>${persistence.api.version}</version>
+			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 
