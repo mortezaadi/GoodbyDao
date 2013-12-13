@@ -27,387 +27,400 @@ import javax.persistence.Query;
 /**
  * Abstract implementation of generic DAO.
  * 
- * @author <a href="http://cafebabe.ir"> morteza adigozalpour </a> (Mortezaadi@gmail.com)
+ * @author <a href="http://cafebabe.ir"> morteza adigozalpour </a>
+ *         (Mortezaadi@gmail.com)
  * 
- * @param <E> entity type, it must implements {@link IEntity}
- * @param <I> entity's primary key, it must be serializable
-
+ * @param <E>
+ *          entity type, it must implements {@link IEntity}
+ * @param <I>
+ *          entity's primary key, it must be serializable
+ * 
  * @see IEntity
  */
 
 public abstract class AbstractDao<E extends IEntity<I>, I extends Serializable>
-		implements IDao<E, I> {
+        implements IDao<E, I> {
 
-	protected EntityManager entityManager;
+  protected EntityManager entityManager;
 
-	protected Class<? extends IEntity<I>> clazz;
+  protected Class< ? extends IEntity<I>> clazz;
 
-	/**
-	 * this constructor is used when extending {@link AbstractDao}
-	 **/
-	@SuppressWarnings(value = "unchecked")
-	protected AbstractDao() {
+  /**
+   * this constructor is used when extending {@link AbstractDao}
+   **/
+  @SuppressWarnings(value = "unchecked")
+  protected AbstractDao() {
 
-		Type[] types = ((ParameterizedType) getClass().getGenericSuperclass())
-				.getActualTypeArguments();
+    Type[] types = ((ParameterizedType) getClass().getGenericSuperclass())
+            .getActualTypeArguments();
 
-		if (types[0] instanceof ParameterizedType) {
-			// If the class has parameterized types, it takes the raw type.
-			ParameterizedType type = (ParameterizedType) types[0];
-			clazz = (Class<IEntity<I>>) type.getRawType();
-		} else {
-			clazz = (Class<IEntity<I>>) types[0];
-		}
-	}
+    if (types[0] instanceof ParameterizedType) {
+      // If the class has parameterized types, it takes the raw type.
+      ParameterizedType type = (ParameterizedType) types[0];
+      clazz = (Class<IEntity<I>>) type.getRawType();
+    } else {
+      clazz = (Class<IEntity<I>>) types[0];
+    }
+  }
 
-	/**
-	 * Constructor with given {@link IEntity} implementation. Use for creating
-	 * DAO without extending this class.
-	 * 
-	 * @author <a href="http://cafebabe.ir"> morteza adigozalpour </a> (Mortezaadi@gmail.com)
-	 * 
-	 * @param clazz   class with will be accessed by DAO methods
-	 **/
-	public AbstractDao(Class<? extends IEntity<I>> clazz) {
-		this.clazz = clazz;
-	}
+  /**
+   * Constructor with given {@link IEntity} implementation. Use for creating DAO
+   * without extending this class.
+   * 
+   * @author <a href="http://cafebabe.ir"> morteza adigozalpour </a>
+   *         (Mortezaadi@gmail.com)
+   * 
+   * @param clazz
+   *          class with will be accessed by DAO methods
+   **/
+  public AbstractDao(final Class< ? extends IEntity<I>> entityClass) {
+    this.clazz = entityClass;
+  }
 
-	@Override
-	public void deleteByID(final I id) {
-		Query q = entityManager.createQuery("DELETE FROM " + clazz.getName()
-				+ " e WHERE e." + IEntity.PRIMERY_KEY_NAME + " = :id");
-		q.setParameter("id", id);
-		q.executeUpdate();
-	}
+  @Override
+  public void deleteByID(final I id) {
+    Query q = entityManager.createQuery("DELETE FROM " + clazz.getName()
+            + " e WHERE e." + IEntity.PRIMERY_KEY_NAME + " = :id");
+    q.setParameter("id", id);
+    q.executeUpdate();
+  }
 
-	@Override
-	public void deleteByIDs(@SuppressWarnings("unchecked") final I... ids){
-		delete(Arrays.asList(ids));
-	}
+  @Override
+  public void deleteByIDs(@SuppressWarnings("unchecked") final I... ids) {
+    delete(Arrays.asList(ids));
+  }
 
-	private void delete(final List<I> ids) {
-		Query q = entityManager.createQuery("DELETE FROM " + clazz.getName()
-				+ " e WHERE e." + IEntity.PRIMERY_KEY_NAME + " IN :ids");
-		q.setParameter("ids", ids);
-		q.executeUpdate();
-	}
+  private void delete(final List<I> ids) {
+    Query q = entityManager.createQuery("DELETE FROM " + clazz.getName()
+            + " e WHERE e." + IEntity.PRIMERY_KEY_NAME + " IN :ids");
+    q.setParameter("ids", ids);
+    q.executeUpdate();
+  }
 
-	@Override
-	public void delete(final E object)  {
-		entityManager.remove(object);
-	}
+  @Override
+  public void delete(final E object) {
+    entityManager.remove(object);
+  }
 
-	@Override
-	public void delete(@SuppressWarnings("unchecked") final E... objects) {
-		List<I> ids = new ArrayList<I>();
-		for (E o : objects) {
-			IEntity<I> obj = (IEntity<I>) o;
-			if (obj.getId() != null)
-				ids.add(obj.getId());
-		}
-		delete(ids);
-	}
+  @Override
+  public void delete(@SuppressWarnings("unchecked") final E... objects) {
+    List<I> ids = new ArrayList<I>();
+    for (E o : objects) {
+      IEntity<I> obj = (IEntity<I>) o;
+      if (obj.getId() != null) {
+        ids.add(obj.getId());
+      }
+    }
+    delete(ids);
+  }
 
-	@Override
-	public void deleteAll() {
-		Query q = entityManager.createQuery("DELETE FROM " + clazz.getName()
-				+ " e ");
-		q.executeUpdate();
-	}
+  @Override
+  public void deleteAll() {
+    Query q = entityManager.createQuery("DELETE FROM " + clazz.getName()
+            + " e ");
+    q.executeUpdate();
+  }
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public List<E> findByExample(E example) {
-		Map<String, Object> sample = getSample(example);
-		// for performance reason its better to return as soon as possible
-		if (sample.size() < 1)
-			return null;
+  @SuppressWarnings("unchecked")
+  @Override
+  public List<E> findByExample(final E example) {
+    Map<String, Object> sample = getSample(example);
+    // for performance reason its better to return as soon as possible
+    if (sample.size() < 1) {
+      return null;
+    }
+    StringBuilder sb = new StringBuilder();
+    sb.append("SELECT e FROM " + clazz.getName() + " e WHERE ");
+    Iterator<Entry<String, Object>> iterator = sample.entrySet().iterator();
 
-		StringBuilder sb = new StringBuilder();
-		sb.append("SELECT e FROM " + clazz.getName() + " e WHERE ");
-		Iterator<Entry<String, Object>> iterator = sample.entrySet().iterator();
+    while (iterator.hasNext()) {
+      Entry<String, Object> next = iterator.next();
+      sb.append("e.");
+      sb.append(next.getKey());
+      sb.append(" = :");
+      sb.append(next.getKey());
+      if (iterator.hasNext()) {
+        sb.append(" AND ");
+      }
+    }
+    Query q = entityManager.createQuery(sb.toString());
+    for (Entry<String, Object> entry : sample.entrySet()) {
+      q.setParameter(entry.getKey(), entry.getValue());
+    }
+    return q.getResultList();
+  }
 
-		while (iterator.hasNext()) {
-			Entry<String, Object> next = iterator.next();
-			sb.append("e.");
-			sb.append(next.getKey());
-			sb.append(" = :");
-			sb.append(next.getKey());
-			if (iterator.hasNext()) {
-				sb.append(" AND ");
-			}
-		}
-		Query q = entityManager.createQuery(sb.toString());
-		for (Entry<String, Object> entry : sample.entrySet()) {
-			q.setParameter(entry.getKey(), entry.getValue());
-		}
-		return q.getResultList();
-	}
+  private Map<String, Object> getSample(final E example) {
+    Field[] fields = example.getClass().getDeclaredFields();
+    Map<String, Object> sample = new HashMap<String, Object>();
 
-	private Map<String, Object> getSample(E example) {
-		Field[] fields = example.getClass().getDeclaredFields();
-		Map<String, Object> sample = new HashMap<String, Object>();
+    for (Field field : fields) {
 
-		for (Field field : fields) {
+      if (field.getName().equals("serialVersionUID")) {
+        continue;
+      }
 
-			if (field.getName().equals("serialVersionUID")) {
-				continue;
-			}
+      if (isAnnotationPresent(field, Id.class)) {
+        continue;
+      }
 
-			if (isAnnotationPresent(field, Id.class)) {
-				continue;
-			}
+      Object value = null;
 
-			Object value = null;
+      try {
+        field.setAccessible(true);
+        value = field.get(example);
+      } catch (IllegalArgumentException e) {
+        continue;
+      } catch (IllegalAccessException e) {
+        continue;
+      }
 
-			try {
-				field.setAccessible(true);
-				value = field.get(example);
-			} catch (IllegalArgumentException e) {
-				continue;
-			} catch (IllegalAccessException e) {
-				continue;
-			}
+      if (value == null) {
+        continue;
+      }
 
-			if (value == null) {
-				continue;
-			}
+      if (value instanceof Collection) {
+        continue;
+      }
 
-			if (value instanceof Collection) {
-				continue;
-			}
+      sample.put(field.getName(), value);
+    }
+    return sample;
+  }
 
-			sample.put(field.getName(), value);
-		}
-		return sample;
-	}
+  @Override
+  public void flushAndClear() {
+    entityManager.flush();
+    entityManager.clear();
+  }
 
-	@Override
-	public void flushAndClear() {
-		entityManager.flush();
-		entityManager.clear();
-	}
+  @SuppressWarnings(value = "unchecked")
+  @Override
+  public E get(final I id) {
+    return (E) entityManager.find(clazz, id);
+  }
 
-	@SuppressWarnings(value = "unchecked")
-	@Override
-	public E get(I id) {
-		return (E) entityManager.find(clazz, id);
-	}
+  @SuppressWarnings(value = "unchecked")
+  @Override
+  public List<E> getAll(final I... ids) {
+    Query q = entityManager.createQuery("SELECT e FROM " + clazz.getName()
+            + " e WHERE e." + IEntity.PRIMERY_KEY_NAME + " IN :ids ");
+    q.setParameter("ids", Arrays.asList(ids));
+    return q.getResultList();
+  }
 
-	@SuppressWarnings(value = "unchecked")
-	@Override
-	public List<E> getAll(I... ids) {
-		Query q = entityManager.createQuery("SELECT e FROM " + clazz.getName()
-				+ " e WHERE e." + IEntity.PRIMERY_KEY_NAME + " IN :ids ");
-		q.setParameter("ids", Arrays.asList(ids));
-		return q.getResultList();
-	}
+  @Override
+  @SuppressWarnings("unchecked")
+  public List<E> getAll(String orderBy, OrderType order, I... ids) {
+    isValidField(orderBy);
+    if (ids == null || ids.length == 0)
+      throw new IllegalArgumentException("Invalid Ids: "
+              + Arrays.toString(ids));
+    if (order == null)
+      order = OrderType.ASC;
+    String qString = "SELECT e FROM " + clazz.getName()
+            + " e WHERE e.id IN :ids ORDER BY e." + orderBy + " "
+            + order.toString();
+    Query q = entityManager.createQuery(qString);
+    q.setParameter("ids", Arrays.asList(ids));
+    return q.getResultList();
+  }
 
-	@Override
-	@SuppressWarnings("unchecked")
-	public List<E> getAll(String OrderBy, OrderType order, I... ids) {
-		isValidField(OrderBy);
-		if (ids == null || ids.length == 0)
-			throw new IllegalArgumentException("Invalid Ids: " + ids);
-		if(order==null) order = OrderType.ASC;
-		String qString = "SELECT e FROM " + clazz.getName()
-				+ " e WHERE e.id IN :ids ORDER BY e." + OrderBy + " "
-				+ order.toString();
-		Query q = entityManager.createQuery(qString);
-		q.setParameter("ids", Arrays.asList(ids));
-		return q.getResultList();
-	}
+  @SuppressWarnings(value = "unchecked")
+  @Override
+  public List<E> getAll() {
+    Query q = entityManager.createQuery("SELECT e FROM " + clazz.getName()
+            + " e");
+    return q.getResultList();
+  }
 
-	@SuppressWarnings(value = "unchecked")
-	@Override
-	public List<E> getAll() {
-		Query q = entityManager.createQuery("SELECT e FROM " + clazz.getName()
-				+ " e");
-		return q.getResultList();
-	}
+  @SuppressWarnings("unchecked")
+  @Override
+  public List<E> getAll(int pageNo, int pageSize) {
+    validNumber(pageNo);
+    validNumber(pageSize);
+    Query q = entityManager.createQuery("SELECT e FROM " + clazz.getName()
+            + " e");
+    q.setMaxResults(pageSize);
+    q.setFirstResult((pageNo - 1) * pageSize);
+    return q.getResultList();
+  }
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public List<E> getAll(int pageNo, int pageSize) {
-		validNumber(pageNo);
-		validNumber(pageSize);
-		Query q = entityManager.createQuery("SELECT e FROM " + clazz.getName()
-				+ " e");
-		q.setMaxResults(pageSize);
-		q.setFirstResult((pageNo - 1) * pageSize);
-		return q.getResultList();
-	}
+  @SuppressWarnings("unchecked")
+  @Override
+  public List<E> getAll(String orderBy, OrderType order) {
+    isValidField(orderBy);
+    if (order == null)
+      order = OrderType.ASC;
+    String qString = "SELECT e FROM " + clazz.getName() + " e ORDER BY e."
+            + orderBy + " " + order.toString();
+    Query q = entityManager.createQuery(qString);
+    return q.getResultList();
+  }
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public List<E> getAll(String OrderBy, OrderType order) {
-		isValidField(OrderBy);
-		if (order == null)
-			order = OrderType.ASC;
-		String qString = "SELECT e FROM " + clazz.getName() + " e ORDER BY e."
-				+ OrderBy + " " + order.toString();
-		Query q = entityManager.createQuery(qString);
-		return q.getResultList();
-	}
+  @SuppressWarnings("unchecked")
+  @Override
+  public List<E> getAll(String orderBy, OrderType order, int pageNo,
+          int pageSize) {
+    isValidField(orderBy);
+    validNumber(pageNo);
+    validNumber(pageSize);
+    if (order == null)
+      order = OrderType.ASC;
+    String qString = "SELECT e FROM " + clazz.getName() + " e ORDER BY e."
+            + orderBy + " " + order.toString();
+    Query q = entityManager.createQuery(qString);
+    q.setMaxResults(pageSize);
+    q.setFirstResult((pageNo - 1) * pageSize);
+    return q.getResultList();
+  }
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public List<E> getAll(String OrderBy, OrderType order, int pageNo, int pageSize) {
-		isValidField(OrderBy);
-		validNumber(pageNo);
-		validNumber(pageSize);
-		if (order == null)
-			order = OrderType.ASC;
-		String qString = "SELECT e FROM " + clazz.getName() + " e ORDER BY e."
-				+ OrderBy + " " + order.toString();
-		Query q = entityManager.createQuery(qString);
-		q.setMaxResults(pageSize);
-		q.setFirstResult((pageNo - 1) * pageSize);
-		return q.getResultList();
-	}
+  /**
+   * Get entity manager.
+   * 
+   * @return entity manager
+   */
+  protected EntityManager getEntityManager() {
+    return entityManager;
+  }
 
-	/**
-	 * Get entity manager.
-	 * 
-	 * @return entity manager
-	 */
-	protected EntityManager getEntityManager() {
-		return entityManager;
-	}
+  @Override
+  public E load(I id) throws EntityNotFoundException {
+    E entity = get(id);
+    if (entity == null) {
+      throw new EntityNotFoundException("entity " + clazz + "#" + id
+              + " was not found");
+    }
+    return entity;
+  }
 
-	@Override
-	public E load(I id) throws EntityNotFoundException {
-		E entity = get(id);
-		if (entity == null) {
-			throw new EntityNotFoundException("entity " + clazz + "#" + id
-					+ " was not found");
-		}
-		return entity;
-	}
+  @Override
+  public void refresh(final E entity) {
+    entityManager.refresh(entity);
+  }
 
-	@Override
-	public void refresh(final E entity) {
-		entityManager.refresh(entity);
-	}
+  @Override
+  public E save(final E object) {
+    if (object.getId() != null) {
+      return entityManager.merge(object);
+    } else {
+      entityManager.persist(object);
+      return object;
+    }
+  }
 
-	@Override
-	public E save(final E object) {
-		if (object.getId() != null) {
-			return entityManager.merge(object);
-		} else {
-			entityManager.persist(object);
-			return object;
-		}
-	}
+  @Override
+  public void save(@SuppressWarnings("unchecked") final E... objects) {
+    for (E object : objects) {
+      save(object);
+    }
+  }
 
-	@Override
-	public void save(@SuppressWarnings("unchecked") final E... objects) {
-		for (E object : objects) {
-			save(object);
-		}
-	}
+  @Override
+  public void save(List<E> objects) {
+    for (E object : objects) {
+      save(object);
+    }
+  }
 
-	@Override
-	public void save(List<E> objects) {
-		for (E object : objects) {
-			save(object);
-		}
-	}
+  /**
+   * Set entity manager.
+   * 
+   * @param entityManager
+   *          entity manager
+   */
+  public void setEntityManager(EntityManager entityManager) {
+    this.entityManager = entityManager;
+  }
 
-	/**
-	 * Set entity manager.
-	 * 
-	 * @param entityManager
-	 *            entity manager
-	 */
-	public void setEntityManager(EntityManager entityManager) {
-		this.entityManager = entityManager;
-	}
+  private void validNumber(int number) {
+    if (number < 1)
+      throw new IllegalArgumentException("Page number or size cannot be : "
+              + number);
+  }
 
-	private void validNumber(int number) {
-		if (number < 1)
-			throw new IllegalArgumentException(
-					"Page number or size cannot be : " + number);
-	}
+  private void isValidField(String propertyName) {
+    try {
+      clazz.getDeclaredField(propertyName);
+    } catch (Exception e) {
+      throw new IllegalArgumentException(e);
 
-	private void isValidField(String propertyName) {
-		try {
-			clazz.getDeclaredField(propertyName);
-		} catch (Exception e) {
-			throw new IllegalArgumentException(e);
+    }
 
-		}
+  }
 
-	}
+  private boolean isAnnotationPresent(Field field,
+          Class< ? extends Annotation> cl) {
+    if (field.isAnnotationPresent(cl))
+      return true;
+    return false;
+  }
 
-	private boolean isAnnotationPresent(Field field,
-			Class<? extends Annotation> cl) {
-		if (field.isAnnotationPresent(cl))
-			return true;
-		return false;
-	}
+  @SuppressWarnings("unchecked")
+  @Override
+  public void updateOne(E object, String... properties)
+          throws IllegalArgumentException, IllegalAccessException {
+    if (object.getId() == null) {
+      throw new IllegalArgumentException();
+    }
+    if (properties == null || properties.length == 0) {
+      entityManager.merge(object);
+      return;
+    }
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public void updateOne(E object, String... properties)
-			throws IllegalArgumentException, IllegalAccessException {
-		if (object.getId() == null)
-			throw new IllegalArgumentException();
-		if (properties == null || properties.length == 0)
-			entityManager.merge(object);
+    // for performance reason its better to mix getting fields, their values
+    // and making query
+    // in one iteration
+    StringBuilder sb = new StringBuilder();
+    sb.append("Update " + clazz.getName() + " SET ");
 
-		// for performance reason its better to mix getting fields, their values
-		// and making query
-		// in one iteration
-		StringBuilder sb = new StringBuilder();
-		sb.append("Update " + clazz.getName() + " SET ");
+    // cache of fieldName --> value
+    Map<String, Object> cache = new HashMap<String, Object>();
 
-		// cache of fieldName --> value
-		Map<String, Object> cache = new HashMap<String, Object>();
+    for (String prop : properties) {
+      try {
+        Field field = object.getClass().getDeclaredField(prop);
+        field.setAccessible(true);
+        Object value = field.get(object);
+        if (value instanceof Collection) {
+          value = new LinkedList<>((Collection< ? extends Object>) value);
+        }
+        cache.put(prop, value);
 
-		for (String prop : properties) {
-			try {
-				Field field = object.getClass().getDeclaredField(prop);
-				field.setAccessible(true);
-				Object value = field.get(object);
-				if (value instanceof Collection) {
-					value = new LinkedList<>((Collection<? extends Object>)value);
-				}
-				cache.put(prop, value);
+        // ignore first comma
+        if (cache.size() > 1) {
+          sb.append(" ,");
+        }
+        sb.append(prop);
+        sb.append(" = :");
+        sb.append(prop);
 
-				// ignore first comma
-				if (cache.size() > 1)
-					sb.append(" ,");
-				sb.append(prop);
-				sb.append(" = :");
-				sb.append(prop);
+      } catch (Exception e) { // TODO: use fine grain exceptions
+                              // FIX: NEXT RELEASE I hope :)
+        throw new IllegalAccessException();
+      }
+    }
 
-			} catch (Exception e) { // TODO: use fine grain exceptions // FIX:
-									// NEXT RELEASE I hope :)
-				throw new IllegalAccessException();
-			}
-		}
+    // this means nothing will be updated so hitting db is unnecessary
+    if (cache.size() == 0)
+      return;
 
-		// this means nothing will be updated so hitting db is unnecessary
-		if (cache.size() == 0)
-			return;
+    sb.append(" WHERE id = " + object.getId());
+    Query query = entityManager.createQuery(sb.toString());
+    for (Entry<String, Object> entry : cache.entrySet()) {
+      query.setParameter(entry.getKey(), entry.getValue());
+    }
+    query.executeUpdate();
+  }
 
-		sb.append(" WHERE id = " + object.getId());
-		Query query = entityManager.createQuery(sb.toString());
-		for (Entry<String, Object> entry : cache.entrySet()) {
-			query.setParameter(entry.getKey(), entry.getValue());
-		}
-		query.executeUpdate();
-	}
-
-	// private String fieldToGetter(Field field) {
-	// String name = field.getName();
-	// return "get" + name.substring(0, 1).toUpperCase() + name.substring(1);
-	// }
-	//
-	// private String fieldToSetter(Field field) {
-	// String name = field.getName();
-	// return "set" + name.substring(0, 1).toUpperCase() + name.substring(1);
-	// }
+  // private String fieldToGetter(Field field) {
+  // String name = field.getName();
+  // return "get" + name.substring(0, 1).toUpperCase() + name.substring(1);
+  // }
+  //
+  // private String fieldToSetter(Field field) {
+  // String name = field.getName();
+  // return "set" + name.substring(0, 1).toUpperCase() + name.substring(1);
+  // }
 
 }
