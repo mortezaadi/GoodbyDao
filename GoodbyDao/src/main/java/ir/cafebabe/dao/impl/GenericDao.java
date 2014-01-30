@@ -10,6 +10,7 @@ import java.io.Serializable;
  * 
  * <pre>
  * 
+ * 
  * {
  *   &#064;code
  *   IDao&lt;Order, Long&gt; orderDao = new CdiGenericDao&lt;Order, Long&gt;(Order.class);

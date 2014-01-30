@@ -14,7 +14,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -123,8 +122,8 @@ public abstract class AbstractDao<E extends IEntity<I>, I extends Serializable>
 
   @SuppressWarnings("unchecked")
   @Override
-  public List<E> findByExample(final E example) {
-    Map<String, Object> sample = getSample(example);
+  public List<E> findByExample(final E example, boolean ignoreZeroOrEmpty) {
+    Map<String, Object> sample = getSample(example, ignoreZeroOrEmpty);
     // for performance reason its better to return as soon as possible
     if (sample.size() < 1) {
       return null;
@@ -150,7 +149,7 @@ public abstract class AbstractDao<E extends IEntity<I>, I extends Serializable>
     return q.getResultList();
   }
 
-  private Map<String, Object> getSample(final E example) {
+  private Map<String, Object> getSample(final E example, boolean ignoreEmpty) {
     Field[] fields = example.getClass().getDeclaredFields();
     Map<String, Object> sample = new HashMap<String, Object>();
 
@@ -183,6 +182,14 @@ public abstract class AbstractDao<E extends IEntity<I>, I extends Serializable>
         continue;
       }
 
+      if (ignoreEmpty) {
+        if (value instanceof String && "".equals(value)) {
+          continue;
+        }
+        if (value.toString().equals("0") || value.toString().equals("0.0")) {
+          continue;
+        }
+      }
       sample.put(field.getName(), value);
     }
     return sample;
@@ -356,12 +363,19 @@ public abstract class AbstractDao<E extends IEntity<I>, I extends Serializable>
     return false;
   }
 
-  @SuppressWarnings("unchecked")
+  /**
+   * Only update specified properties of the Object
+   * 
+   * @param object
+   *          An dirty object.
+   * @param properties
+   *          array of property names. for now Collection properties in not
+   *          supported.
+   */
   @Override
-  public void updateOne(E object, String... properties)
-          throws IllegalArgumentException, IllegalAccessException {
+  public void updateOne(E object, String... properties) {
     if (object.getId() == null) {
-      throw new IllegalArgumentException();
+      throw new RuntimeException("Not a Persisted entity");
     }
     if (properties == null || properties.length == 0) {
       entityManager.merge(object);
@@ -369,7 +383,7 @@ public abstract class AbstractDao<E extends IEntity<I>, I extends Serializable>
     }
 
     // for performance reason its better to mix getting fields, their values
-    // and making query
+    // and making query all in one loop
     // in one iteration
     StringBuilder sb = new StringBuilder();
     sb.append("Update " + clazz.getName() + " SET ");
@@ -383,7 +397,8 @@ public abstract class AbstractDao<E extends IEntity<I>, I extends Serializable>
         field.setAccessible(true);
         Object value = field.get(object);
         if (value instanceof Collection) {
-          value = new LinkedList<>((Collection< ? extends Object>) value);
+          // value = new LinkedList<>((Collection< ? extends Object>) value);
+          throw new RuntimeException("Collection property is not suppotred.");
         }
         cache.put(prop, value);
 
@@ -397,7 +412,7 @@ public abstract class AbstractDao<E extends IEntity<I>, I extends Serializable>
 
       } catch (Exception e) { // TODO: use fine grain exceptions
                               // FIX: NEXT RELEASE I hope :)
-        throw new IllegalAccessException();
+        throw new RuntimeException(e);
       }
     }
 
@@ -411,6 +426,61 @@ public abstract class AbstractDao<E extends IEntity<I>, I extends Serializable>
       query.setParameter(entry.getKey(), entry.getValue());
     }
     query.executeUpdate();
+  }
+
+  @Override
+  public Number count() {
+    return count(IEntity.PRIMERY_KEY_NAME, false);
+  }
+
+  @Override
+  public Number count(String property, boolean distinct) {
+    isValidField(property);
+    String subQuery = distinct ? "COUNT (DISTINCT e." + property + ")"
+            : "COUNT (e." + property + ")";
+    Query q = entityManager.createQuery("SELECT " + subQuery + " FROM "
+            + clazz.getName() + " e");
+    Number result = (Number) q.getSingleResult();
+    return result;
+  }
+
+  @Override
+  public Number average(String property) {
+    isValidField(property);
+    String subQuery = "AVG(e." + property + ")";
+    Query q = entityManager.createQuery("SELECT " + subQuery + " FROM "
+            + clazz.getName() + " e");
+    Number result = (Number) q.getSingleResult();
+    return result;
+  }
+  @Override
+  public Number sum(String property) {
+    isValidField(property);
+    String subQuery = "SUM(e." + property + ")";
+    Query q = entityManager.createQuery("SELECT " + subQuery + " FROM "
+            + clazz.getName() + " e");
+    Number result = (Number) q.getSingleResult();
+    return result;
+  }
+
+  @Override
+  public Number max(String property) {
+    isValidField(property);
+    String subQuery = "MAX(e." + property + ")";
+    Query q = entityManager.createQuery("SELECT " + subQuery + " FROM "
+            + clazz.getName() + " e");
+    Number result = (Number) q.getSingleResult();
+    return result;
+  }
+
+  @Override
+  public Number min(String property) {
+    isValidField(property);
+    String subQuery = "MIN(e." + property + ")";
+    Query q = entityManager.createQuery("SELECT " + subQuery + " FROM "
+            + clazz.getName() + " e");
+    Number result = (Number) q.getSingleResult();
+    return result;
   }
 
   // private String fieldToGetter(Field field) {

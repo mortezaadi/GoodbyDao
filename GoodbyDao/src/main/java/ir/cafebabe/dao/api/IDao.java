@@ -71,9 +71,11 @@ public interface IDao<E extends IEntity<I>, I extends Serializable> {
    * 
    * @param example
    *          sample object
+   * @param ignoreZeroOrEmpty
+   *          ignore Zero values and Empty Strings
    * @return List of Objects similar to provided example.
    */
-  List<E> findByExample(E example);
+  List<E> findByExample(E example, boolean ignoreZeroOrEmpty);
 
   /**
    * Write to database and clear it.
@@ -110,7 +112,8 @@ public interface IDao<E extends IEntity<I>, I extends Serializable> {
    *          Serializable Objects as a PrimeryKeys
    * @return list of Objects
    */
-  List<E> getAll(String orderBy, OrderType order, @SuppressWarnings("unchecked") I... ids);
+  List<E> getAll(String orderBy, OrderType order,
+          @SuppressWarnings("unchecked") I... ids);
 
   /**
    * get list of Objects from database.
@@ -212,11 +215,14 @@ public interface IDao<E extends IEntity<I>, I extends Serializable> {
    *          An dirty object.
    * @param properties
    *          array of property names.
-   * @throws IllegalAccessException
-   *           if access to field is restricted.
-   * @throws IllegalArgumentException
-   *           if null or invalid data passed in.
    */
-  void updateOne(E object, String... properties) throws IllegalAccessException;
+  void updateOne(E object, String... properties);
 
+  Number count();
+
+  Number count(String property, boolean distinct);
+  Number average(String property);
+  Number sum(String property);
+  Number max(String property);
+  Number min(String property);
 }
