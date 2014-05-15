@@ -136,7 +136,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>ir.cafebabe</groupId>
 	<artifactId>GoodbyDao</artifactId>
-	<version>0.0.1</version>
+	<version>0.0.2-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>Good By(e) DAO</name>
 	<description>Light weight and easy to use generic DAO</description>
